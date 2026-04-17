@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # ShopAPI — DevOps Learning Project
 
 A production-grade multi-service application used as a learning vehicle
@@ -32,4 +31,3 @@ docker compose up
 
 ## Deploying to Kubernetes
 kubectl apply -k k8s/overlays/dev
-EOF
