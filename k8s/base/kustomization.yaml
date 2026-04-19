@@ -13,3 +13,4 @@ resources:
   - order-service/deployment.yaml
   - order-service/service.yaml
   - ingress/ingress.yaml
+  - ministack-service.yaml

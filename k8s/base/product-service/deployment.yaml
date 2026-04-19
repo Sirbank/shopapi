@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: ghcr.io/GITHUB_USERNAME/shopapi/product-service:v0.1.0
+          image: product-service 
           ports:
             - containerPort: 8000
               name: http
