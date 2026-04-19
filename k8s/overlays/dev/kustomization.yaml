@@ -18,8 +18,8 @@ patches:
 # on every merge to main
 images:
   - name: product-service
-   newTag: latest
-   newName: ghcr.io/sirbank/shopapi/product-service
+    newTag: latest
+    newName: ghcr.io/sirbank/shopapi/product-service
   - name: order-service
     newTag: latest
     newName: ghcr.io/sirbank/shopapi/order-service
