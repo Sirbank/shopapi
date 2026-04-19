@@ -18,11 +18,11 @@ patches:
 # on every merge to main
 images:
   - name: product-service
-    newName: ghcr.io/sirbank/shopapi/product-service
-    newTag: latest   # Replaced by GitHub Actions with: sha-XXXXXXX
+   newTag: latest
+   newName: ghcr.io/sirbank/shopapi/product-service
   - name: order-service
+    newTag: latest
     newName: ghcr.io/sirbank/shopapi/order-service
-    newTag: latest   # Replaced by GitHub Actions with: sha-XXXXXXX
 
 # Labels applied to all resources in this overlay
 # commonLabels is deprecated — use labels with includeSelectors: false
