@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference the base manifests
+resources:
+  - ../../base
+
+# Apply namespace to ALL resources in this overlay
+namespace: dev
+
+# Environment-specific patches
+# Note: no target: field when patch files contain multiple resources (---separated)
+patches:
+  - path: replicas-patch.yaml
+  - path: resources-patch.yaml
+
+# Image substitution — GitHub Actions updates these newTag values automatically
+# on every merge to main
+images:
+  - name: product-service
+    newName: ghcr.io/GITHUB_USERNAME/shopapi/product-service
+    newTag: latest   # Replaced by GitHub Actions with: sha-XXXXXXX
+  - name: order-service
+    newName: ghcr.io/GITHUB_USERNAME/shopapi/order-service
+    newTag: latest   # Replaced by GitHub Actions with: sha-XXXXXXX
+
+# Labels applied to all resources in this overlay
+# commonLabels is deprecated — use labels with includeSelectors: false
+labels:
+  - pairs:
+      environment: dev
+      managed-by: argocd
+    includeSelectors: false

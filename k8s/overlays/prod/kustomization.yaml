@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: prod
+
+patches:
+  - path: replicas-patch.yaml
+  - path: resources-patch.yaml
+
+# Prod: ALWAYS use a pinned version tag — NEVER use "latest"
+# The CD promotion workflow updates these on every git tag push
+images:
+  - name: product-service
+    newName: ghcr.io/GITHUB_USERNAME/shopapi/product-service
+    newTag: "v0.1.1"   # CD workflow replaces this with the release version
+  - name: order-service
+    newName: ghcr.io/GITHUB_USERNAME/shopapi/order-service
+    newTag: "v0.1.1"
+
+labels:
+  - pairs:
+      environment: prod
+      managed-by: argocd
+    includeSelectors: false
