@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: shopapi
+  namespace: argocd
+  # Prevent project deletion if it has active apps
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "ShopAPI project — manages dev and prod environments"
+
+  # Only trust manifests from this specific repo
+  sourceRepos:
+    - https://github.com/sirbank/shopapi.git
+
+  # Only allow deployment to these specific namespaces
+  destinations:
+    - namespace: dev
+      server: https://kubernetes.default.svc
+    - namespace: prod
+      server: https://kubernetes.default.svc
+
+  # Allow managing namespace-level resources freely
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Allow creating/managing namespaces themselves (for CreateNamespace option)
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  # Orphaned resource monitoring — alert if K8s has resources not in Git
+  orphanedResources:
+    warn: true

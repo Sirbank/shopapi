@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shopapi-prod
+  namespace: argocd
+  labels:
+    environment: prod
+    app: shopapi
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: shopapi
+
+  source:
+    repoURL: https://github.com/sirbank/shopapi.git
+    targetRevision: main
+    path: k8s/overlays/prod
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prod
+
+  syncPolicy:
+    automated:
+      prune: true
+      # selfHeal is FALSE for prod — emergency manual changes must not be reverted
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

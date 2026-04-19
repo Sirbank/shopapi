@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shopapi-dev
+  namespace: argocd
+  labels:
+    environment: dev
+    app: shopapi
+  # Cascade-delete K8s resources when this Application is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Use the shopapi project (enforces repo + namespace boundaries)
+  project: shopapi
+
+  source:
+    repoURL: https://github.com/sirbank/shopapi.git
+    # Watch the main branch
+    targetRevision: main
+    # ArgoCD renders THIS path using Kustomize
+    path: k8s/overlays/dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+
+  syncPolicy:
+    automated:
+      # prune: delete K8s resources that are removed from Git
+      prune: true
+      # selfHeal: if someone manually edits a resource, ArgoCD reverts it
+      selfHeal: true
+    syncOptions:
+      # Create namespace if it doesn't exist
+      - CreateNamespace=true
+      # Use Server-Side Apply (required for v3.x, better for patches)
+      - ServerSideApply=true
+      # Preserve existing PVC data when replacing PVCs
+      - PrunePropagationPolicy=foreground
+    # Retry on transient failures (network blip, API server busy)
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+
+  # Ignore replica count — HPA will manage this in Phase 5
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
