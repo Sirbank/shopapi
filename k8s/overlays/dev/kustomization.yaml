@@ -18,10 +18,10 @@ patches:
 # on every merge to main
 images:
   - name: product-service
-    newName: ghcr.io/GITHUB_USERNAME/shopapi/product-service
+    newName: ghcr.io/sirbank/shopapi/product-service
     newTag: latest   # Replaced by GitHub Actions with: sha-XXXXXXX
   - name: order-service
-    newName: ghcr.io/GITHUB_USERNAME/shopapi/order-service
+    newName: ghcr.io/sirbank/shopapi/order-service
     newTag: latest   # Replaced by GitHub Actions with: sha-XXXXXXX
 
 # Labels applied to all resources in this overlay
