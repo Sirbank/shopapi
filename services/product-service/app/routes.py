@@ -90,3 +90,7 @@ def get_extension(filename: str) -> str:
     if "." in filename:
         return "." + filename.rsplit(".", 1)[-1]
     return ""
+
+@route.get("/products/version")
+def get_version():
+    return {"version": "1.1.0", "service": "product-service"}
