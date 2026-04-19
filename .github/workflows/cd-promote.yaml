@@ -1,0 +1,125 @@
+name: CD — Production Promotion
+
+on:
+  push:
+    # Only trigger on version tags: v1.0.0, v1.2.3, v2.0.0-rc1, etc.
+    tags:
+      - 'v*'
+
+jobs:
+  promote-to-prod:
+    name: Promote to Production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Checkout main branch (not the tag) so we can push back to main
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Extract version from tag ───────────────────────────────
+      - name: Extract version from tag
+        id: version
+        run: |
+          # github.ref_name is the tag name, e.g. "v1.0.0"
+          VERSION="${{ github.ref_name }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Promoting version: $VERSION to production"
+
+      # ── 3. Verify images exist in GHCR ────────────────────────────
+      # Don't promote a version if the images weren't built
+      - name: Verify product-service image exists
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          IMAGE="ghcr.io/${{ github.repository }}/product-service:$VERSION"
+          echo "Checking image: $IMAGE"
+          docker manifest inspect $IMAGE || \
+            (echo "ERROR: Image $IMAGE not found in GHCR" && exit 1)
+
+      - name: Verify order-service image exists
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          IMAGE="ghcr.io/${{ github.repository }}/order-service:$VERSION"
+          echo "Checking image: $IMAGE"
+          docker manifest inspect $IMAGE || \
+            (echo "ERROR: Image $IMAGE not found in GHCR" && exit 1)
+
+      # ── 4. Update prod overlay ────────────────────────────────────
+      - name: Update prod overlay image tags
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          echo "Updating prod overlay to version: $VERSION"
+
+          # Update product-service tag
+          sed -i \
+            "/name: product-service/{n;s/newTag:.*/newTag: \"$VERSION\"/}" \
+            k8s/overlays/prod/kustomization.yaml
+
+          # Update order-service tag
+          sed -i \
+            "/name: order-service/{n;s/newTag:.*/newTag: \"$VERSION\"/}" \
+            k8s/overlays/prod/kustomization.yaml
+
+          echo "Updated kustomization.yaml:"
+          cat k8s/overlays/prod/kustomization.yaml
+
+      # ── 5. Commit and push ────────────────────────────────────────
+      - name: Commit production promotion
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add k8s/overlays/prod/kustomization.yaml
+          git commit -m "cd(prod): promote to $VERSION [skip ci]
+
+          Release: $VERSION
+          Promoted by: ${{ github.actor }}
+          Trigger: ${{ github.ref }}
+          Commit: ${{ github.sha }}"
+
+          git push origin main
+
+      # ── 6. Create GitHub Release ──────────────────────────────────
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          gh release create $VERSION \
+            --title "Release $VERSION" \
+            --notes "## Production Promotion
+
+          Version \`$VERSION\` has been promoted to production.
+
+          ### Images
+          - \`ghcr.io/${{ github.repository }}/product-service:$VERSION\`
+          - \`ghcr.io/${{ github.repository }}/order-service:$VERSION\`
+
+          ### Deployment
+          ArgoCD will detect the overlay change and await manual sync approval.
+          Check the ArgoCD UI to complete the deployment."
+
+      # ── 7. Promotion summary ──────────────────────────────────────
+      - name: Promotion summary
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          echo "### Production Promotion Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | $VERSION |" >> $GITHUB_STEP_SUMMARY
+          echo "| Promoted by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Prod overlay updated | k8s/overlays/prod/kustomization.yaml |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next step:** Go to ArgoCD UI and sync \`shopapi-prod\`"
