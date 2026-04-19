@@ -14,11 +14,11 @@ patches:
 # The CD promotion workflow updates these on every git tag push
 images:
   - name: product-service
+    newTag: "0.1.1"
     newName: ghcr.io/sirbank/shopapi/product-service
-    newTag: "v0.1.1"   # CD workflow replaces this with the release version
   - name: order-service
-    newName: ghcr.io/sirbank/shopapi/order-service
     newTag: "v0.1.1"
+    newName: ghcr.io/sirbank/shopapi/order-service
 
 labels:
   - pairs:
