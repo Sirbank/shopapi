@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: ghcr.io/GITHUB_USERNAME/shopapi/order-service:v0.1.0
+          image: ghcr.io/sirbank/shopapi/order-service:v0.1.1
           ports:
             - containerPort: 8001
               name: http
